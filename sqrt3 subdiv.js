@@ -50,7 +50,9 @@ var width, height;
 
 
 function changeMeshGeometry() {
-
+    scene.remove(crnParams.mesh);
+    scene.remove(crnParams.wireMesh);
+    createDefaultGeometry();
 }
 
 function changeMeshMaterial(){
