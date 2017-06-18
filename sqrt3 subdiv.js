@@ -26,8 +26,7 @@ var params = {
 
 var crnParams = {
     subdivAmount: 0,
-    originalGeometry: null,
-    currentGeometry: null,
+    geometry: null,
     mesh: null,
     wireMesh: null,
     wireMat: null,
@@ -49,12 +48,29 @@ var controls;
 
 var width, height;
 
+//subdivide
 
+function printVertices(geometry) {
+    console.log("Print vertices!");
+    var vertices = new Float32Array(geometry.vertices.length * 3);
+    for (var i = 0, il = geometry.vertices.length; i < il; ++i) {
+        console.log(geometry.vertices[i].x + ", " + geometry.vertices[i].y + ", " + geometry.vertices[i].z);
+    }
+    console.log("Print faces!");
+    var indices = new Uint32Array(geometry.faces.length * 3);
+    for (var i = 0, il = geometry.faces.length; i < il; ++i) {
+        console.log(geometry.faces[i].a + ", " + geometry.faces[i].b + ", " + geometry.faces[i].c);
+    }
+}
 
 function changeMeshGeometry() {
     scene.remove(crnParams.mesh);
     scene.remove(crnParams.wireMesh);
     createDefaultGeometry();
+}
+
+function changeSubdivAmount() {
+    printVertices(crnParams.geometry);
 }
 
 function changeMeshMaterial(){
@@ -88,7 +104,7 @@ function changeMeshWireframe() {
 function initGui() {
     gui = new dat.GUI();
     gui.add(params, 'geometry', geometriesNames).onChange(changeMeshGeometry);
-    //gui.add(params, 'subdivAmount');
+    gui.add(params, 'subdivAmount').onChange(changeSubdivAmount);
     gui.add(params, 'material', materialNames).onChange(changeMeshMaterial);
     gui.addColor(params, 'meshColor').name('color').onChange(changeMeshColor);
     gui.add(params, 'surface').onChange(changeMeshSurface);
@@ -124,17 +140,17 @@ function createMaterials() {
 
 
 function createDefaultGeometry() {
-    crnParams.currentGeometry = geometries[params.geometry];
+    crnParams.geometry = geometries[params.geometry];
     crnParams.subdivAmount = 0;
     crnParams.mesh = new THREE.Mesh(
-        crnParams.currentGeometry,
+        crnParams.geometry,
         crnParams.material
     );
     changeMeshMaterial();
     scene.add(crnParams.mesh);
     // create the wireframe mesh
     crnParams.wireMesh = new THREE.Mesh(
-        crnParams.currentGeometry,
+        crnParams.geometry,
         crnParams.wireMat
     );
     scene.add(crnParams.wireMesh);
