@@ -178,7 +178,7 @@ function initialize() {
     camera = new THREE.PerspectiveCamera( 45, width / height, 0.1, 40);
     camera.position.z = 15;
 
-    controls = new THREE.OrbitControls(camera);
+    controls = new THREE.OrbitControls(camera,renderer.domElement);
     controls.addEventListener('change', render);
     // some custom control settings
     controls.enablePan = false;
