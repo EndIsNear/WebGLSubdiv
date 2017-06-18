@@ -45,6 +45,7 @@ var stats;
 var renderer;
 var scene;
 var camera;
+var controls;
 
 var width, height;
 
@@ -139,6 +140,21 @@ function createDefaultGeometry() {
     scene.add(crnParams.wireMesh);
 }
 
+function createDefaultLights() {
+    // create a point light
+    var pointLight = new THREE.PointLight(0xFFFFFF);
+    pointLight.position.x = 10;
+    pointLight.position.y = 50;
+    pointLight.position.z = 130;
+    scene.add(pointLight);
+
+    // create a point light
+    var pointLight = new THREE.PointLight(0xFFFFFF);
+    pointLight.position.x = -10;
+    pointLight.position.y = -50;
+    pointLight.position.z = -130;
+    scene.add(pointLight);
+}
 
 function initialize() {
     width = window.innerWidth;
@@ -161,6 +177,12 @@ function initialize() {
 
     camera = new THREE.PerspectiveCamera( 45, width / height, 0.1, 40);
     camera.position.z = 15;
+
+    controls = new THREE.OrbitControls(camera);
+    controls.addEventListener('change', render);
+    // some custom control settings
+    controls.enablePan = false;
+
     scene.add(camera);
 
     window.addEventListener( 'resize', onWindowResize, false );
@@ -170,18 +192,10 @@ function initialize() {
     // Attach the renderer-supplied DOM element.
     container.appendChild(renderer.domElement);
 
-    // create a point light
-    var pointLight = new THREE.PointLight(0xFFFFFF);
-    pointLight.position.x = 10;
-    pointLight.position.y = 50;
-    pointLight.position.z = 130;
-    scene.add(pointLight);
-
-
+    createDefaultLights();
     createInitialGeoms();
     createMaterials();
     createDefaultGeometry();
-
 
     requestAnimationFrame(update);
 }
@@ -196,4 +210,8 @@ function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize( window.innerWidth, window.innerHeight );
+}
+
+function render() {
+    renderer.render( scene, camera );
 }
