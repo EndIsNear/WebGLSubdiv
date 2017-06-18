@@ -40,6 +40,7 @@ var geometries = [];
 var materials = [];
 
 var guiControls;
+var stats;
 
 var renderer;
 var scene;
@@ -146,6 +147,12 @@ function initialize() {
     // Get the DOM element to attach to
     const container = document.querySelector('#container');
 
+    stats = new Stats();
+    stats.domElement.style.position = 'absolute';
+    stats.domElement.style.top = '0px';
+    stats.domElement.style.zIndex = 100;
+    container.appendChild( stats.domElement );
+
     // Create a WebGL renderer, camera and a scene
     renderer = new THREE.WebGLRenderer();
     renderer.setSize(width, height);
@@ -181,6 +188,7 @@ function initialize() {
 
 function update () {
   renderer.render(scene, camera);
+  stats.update();
   requestAnimationFrame(update);
 }
 
