@@ -104,7 +104,7 @@ function changeMeshWireframe() {
 function initGui() {
     gui = new dat.GUI();
     gui.add(params, 'geometry', geometriesNames).onChange(changeMeshGeometry);
-    gui.add(params, 'subdivAmount').onChange(changeSubdivAmount);
+    gui.add(params, 'subdivAmount', 0, 8).onChange(changeSubdivAmount);
     gui.add(params, 'material', materialNames).onChange(changeMeshMaterial);
     gui.addColor(params, 'meshColor').name('color').onChange(changeMeshColor);
     gui.add(params, 'surface').onChange(changeMeshSurface);
