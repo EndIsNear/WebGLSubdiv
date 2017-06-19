@@ -15,8 +15,8 @@ var materialNames = [
 ];
 
 var params = {
+    Subdivide:function(){ changeSubdivAmount(); },
     geometry: 'tetrahedron',
-    subdivAmount: 0,
     material: 'phongFlat',
     meshColor: '#ff8000',
     surface: true,
@@ -102,9 +102,11 @@ function changeMeshWireframe() {
 }
 
 function initGui() {
+
     gui = new dat.GUI();
+    var obj = { };
+    gui.add(params,'Subdivide');
     gui.add(params, 'geometry', geometriesNames).onChange(changeMeshGeometry);
-    gui.add(params, 'subdivAmount', 0, 8).onChange(changeSubdivAmount);
     gui.add(params, 'material', materialNames).onChange(changeMeshMaterial);
     gui.addColor(params, 'meshColor').name('color').onChange(changeMeshColor);
     gui.add(params, 'surface').onChange(changeMeshSurface);
