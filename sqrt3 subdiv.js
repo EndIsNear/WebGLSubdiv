@@ -70,6 +70,7 @@ function changeMeshGeometry() {
 }
 
 function changeSubdivAmount() {
+    crnParams.subdivAmount++;
     printVertices(crnParams.geometry);
 }
 
