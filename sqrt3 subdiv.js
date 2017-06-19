@@ -50,17 +50,77 @@ var width, height;
 
 //subdivide
 
-function printVertices(geometry) {
-    console.log("Print vertices!");
-    var vertices = new Float32Array(geometry.vertices.length * 3);
-    for (var i = 0, il = geometry.vertices.length; i < il; ++i) {
-        console.log(geometry.vertices[i].x + ", " + geometry.vertices[i].y + ", " + geometry.vertices[i].z);
+function subdivide2(geometry) {
+    geometry.dynamic = true;
+    var vertices = geometry.vertices;
+    var faces = geometry.faces;
+
+
+    geometry.verticesNeedUpdate = true;
+    geometry.elementsNeedUpdate = true;
+}
+
+function subdivide(geometry) {
+    var vertices = geometry.vertices;
+    var faces = geometry.faces;
+    var newVertCnt = 0;
+    var newFacesCnt = 0;
+    var newGeometry = new THREE.BufferGeometry();
+    var newVertices = new Float32Array((vertices.length + faces.length) * 3);
+    var newFaces = new Uint32Array(faces.length * 3 * 3);
+    // copy original geometry
+    for (; newVertCnt < vertices.length; ++newVertCnt) {
+        newVertices[newVertCnt * 3] = vertices[newVertCnt].x;
+        newVertices[newVertCnt * 3 + 1] = vertices[newVertCnt].y;
+        newVertices[newVertCnt * 3 + 2] = vertices[newVertCnt].z;
     }
-    console.log("Print faces!");
-    var indices = new Uint32Array(geometry.faces.length * 3);
-    for (var i = 0, il = geometry.faces.length; i < il; ++i) {
-        console.log(geometry.faces[i].a + ", " + geometry.faces[i].b + ", " + geometry.faces[i].c);
+    var indices = new Uint32Array(faces.length * 3);
+    for (; newFacesCnt < faces.length; ++newFacesCnt) {
+        newFaces[newFacesCnt * 3] = faces[newFacesCnt].a;
+        newFaces[newFacesCnt * 3 + 1] = faces[newFacesCnt].b;
+        newFaces[newFacesCnt * 3 + 2] = faces[newFacesCnt].c;
     }
+    // console.log(newVertCnt);
+    // console.log(newFacesCnt);
+
+    //add new vertices
+    for (var i = 0; i < faces.length; ++i) {
+        var crnFace = faces[i];
+        
+        //calculate new vertex
+        var newVertex = new THREE.Vector3();
+        newVertex.copy(vertices[crnFace.a]);
+        newVertex.add(vertices[crnFace.b]);
+        newVertex.add(vertices[crnFace.c]);
+        newVertex.multiplyScalar(0.3333);
+        newVertices[newVertCnt * 3] = newVertex.x;
+        newVertices[newVertCnt * 3 + 1] = newVertex.y;
+        newVertices[newVertCnt * 3 + 2] = newVertex.z;
+        ++newVertCnt;
+
+        newFaces[newFacesCnt * 3] = crnFace.a;
+        newFaces[newFacesCnt * 3 + 1] = crnFace.b;
+        newFaces[newFacesCnt * 3 + 2] = newVertCnt - 1;
+        ++newFacesCnt;
+
+        newFaces[newFacesCnt * 3] = crnFace.b;
+        newFaces[newFacesCnt * 3 + 1] = crnFace.c;
+        newFaces[newFacesCnt * 3 + 2] = newVertCnt - 1;
+        ++newFacesCnt;
+
+        newFaces[i * 3] = crnFace.c;
+        newFaces[i * 3 + 1] = crnFace.a;
+        newFaces[i * 3 + 2] = newVertCnt - 1;
+    }
+
+
+    newGeometry.addAttribute('position', new THREE.BufferAttribute(newVertices, 3));
+    newGeometry.setIndex(new THREE.BufferAttribute(newFaces, 1));
+    newGeometry.computeBoundingSphere();
+    newGeometry.computeVertexNormals();
+    crnParams.geometry = newGeometry;
+    crnParams.mesh.geometry = newGeometry;
+    crnParams.wireMesh.geometry = newGeometry;
 }
 
 function changeMeshGeometry() {
@@ -71,7 +131,7 @@ function changeMeshGeometry() {
 
 function changeSubdivAmount() {
     crnParams.subdivAmount++;
-    printVertices(crnParams.geometry);
+    subdivide(crnParams.geometry);
 }
 
 function changeMeshMaterial(){
