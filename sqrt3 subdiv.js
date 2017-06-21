@@ -61,13 +61,41 @@ function subdivide2(geometry) {
 }
 
 function subdivide(geometry) {
+    var vertices = geometry.getAttribute('position').array;
+    var faces = geometry.getIndex().array;
+    var newVertCnt = 0;
+    var newFacesCnt = 0;
+    // var newGeometry = new THREE.BufferGeometry();
+    var newVertices = new Float32Array((vertices.length + faces.length) * 3);
+    var newFaces = new Uint32Array(faces.length * 3 * 3);
+    // copy original geometry
+    for (; newVertCnt < vertices.length; ++newVertCnt) {
+        newVertices[newVertCnt] = vertices[newVertCnt];
+    }
+    for (; newFacesCnt < faces.length; ++newFacesCnt) {
+        newFaces[newFacesCnt] = faces[newFacesCnt];
+    }
+
+    //add new vertices
+    for (var i = 0; i < faces.length / 3; ++i) {
+
+    }
+
+
+    geometry.addAttribute('position', new THREE.BufferAttribute(newVertices, 3));
+    geometry.setIndex(new THREE.BufferAttribute(newFaces, 1));
+    geometry.computeBoundingSphere();
+    geometry.computeVertexNormals();
+}
+
+function createBufferedIndexedGeomFromNormalGeometry(geometry) {
     var vertices = geometry.vertices;
     var faces = geometry.faces;
     var newVertCnt = 0;
     var newFacesCnt = 0;
     var newGeometry = new THREE.BufferGeometry();
-    var newVertices = new Float32Array((vertices.length + faces.length) * 3);
-    var newFaces = new Uint32Array(faces.length * 3 * 3);
+    var newVertices = new Float32Array(vertices.length * 3);
+    var newFaces = new Uint32Array(faces.length * 3);
     // copy original geometry
     for (; newVertCnt < vertices.length; ++newVertCnt) {
         newVertices[newVertCnt * 3] = vertices[newVertCnt].x;
@@ -80,47 +108,12 @@ function subdivide(geometry) {
         newFaces[newFacesCnt * 3 + 1] = faces[newFacesCnt].b;
         newFaces[newFacesCnt * 3 + 2] = faces[newFacesCnt].c;
     }
-    // console.log(newVertCnt);
-    // console.log(newFacesCnt);
-
-    //add new vertices
-    for (var i = 0; i < faces.length; ++i) {
-        var crnFace = faces[i];
-        
-        //calculate new vertex
-        var newVertex = new THREE.Vector3();
-        newVertex.copy(vertices[crnFace.a]);
-        newVertex.add(vertices[crnFace.b]);
-        newVertex.add(vertices[crnFace.c]);
-        newVertex.multiplyScalar(0.3333);
-        newVertices[newVertCnt * 3] = newVertex.x;
-        newVertices[newVertCnt * 3 + 1] = newVertex.y;
-        newVertices[newVertCnt * 3 + 2] = newVertex.z;
-        ++newVertCnt;
-
-        newFaces[newFacesCnt * 3] = crnFace.a;
-        newFaces[newFacesCnt * 3 + 1] = crnFace.b;
-        newFaces[newFacesCnt * 3 + 2] = newVertCnt - 1;
-        ++newFacesCnt;
-
-        newFaces[newFacesCnt * 3] = crnFace.b;
-        newFaces[newFacesCnt * 3 + 1] = crnFace.c;
-        newFaces[newFacesCnt * 3 + 2] = newVertCnt - 1;
-        ++newFacesCnt;
-
-        newFaces[i * 3] = crnFace.c;
-        newFaces[i * 3 + 1] = crnFace.a;
-        newFaces[i * 3 + 2] = newVertCnt - 1;
-    }
-
 
     newGeometry.addAttribute('position', new THREE.BufferAttribute(newVertices, 3));
     newGeometry.setIndex(new THREE.BufferAttribute(newFaces, 1));
     newGeometry.computeBoundingSphere();
     newGeometry.computeVertexNormals();
-    crnParams.geometry = newGeometry;
-    crnParams.mesh.geometry = newGeometry;
-    crnParams.wireMesh.geometry = newGeometry;
+    return newGeometry;
 }
 
 function changeMeshGeometry() {
@@ -130,6 +123,10 @@ function changeMeshGeometry() {
 }
 
 function changeSubdivAmount() {
+    if(crnParams.subdivAmount >= 6) {
+        console.log("Max subdivision amount is 6!");
+        return;
+    }
     crnParams.subdivAmount++;
     subdivide(crnParams.geometry);
 }
@@ -176,11 +173,11 @@ function initGui() {
 }
 
 function createInitialGeoms() {
-    geometries['tetrahedron'] = new THREE.TetrahedronGeometry(4);
-    geometries['cube'] = new THREE.BoxGeometry(4, 4, 4);
-    geometries['sphere'] = new THREE.SphereGeometry(4, 16, 9);
-    geometries['icosahedron'] = new THREE.IcosahedronGeometry(4);
-    geometries['dodecahedron'] = new THREE.DodecahedronGeometry(4);
+    geometries['tetrahedron'] = createBufferedIndexedGeomFromNormalGeometry(new THREE.TetrahedronGeometry(4));
+    geometries['cube'] = createBufferedIndexedGeomFromNormalGeometry(new THREE.BoxGeometry(4, 4, 4));
+    geometries['sphere'] = createBufferedIndexedGeomFromNormalGeometry(new THREE.SphereGeometry(4, 16, 9));
+    geometries['icosahedron'] = createBufferedIndexedGeomFromNormalGeometry(new THREE.IcosahedronGeometry(4));
+    geometries['dodecahedron'] = createBufferedIndexedGeomFromNormalGeometry(new THREE.DodecahedronGeometry(4));
 }
 
 function createMaterials() {
