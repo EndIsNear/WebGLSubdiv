@@ -49,25 +49,14 @@ var controls;
 var width, height;
 
 //subdivide
-
-function subdivide2(geometry) {
-    geometry.dynamic = true;
-    var vertices = geometry.vertices;
-    var faces = geometry.faces;
-
-
-    geometry.verticesNeedUpdate = true;
-    geometry.elementsNeedUpdate = true;
-}
-
 function subdivide(geometry) {
     var vertices = geometry.getAttribute('position').array;
     var faces = geometry.getIndex().array;
     var newVertCnt = 0;
     var newFacesCnt = 0;
-    // var newGeometry = new THREE.BufferGeometry();
-    var newVertices = new Float32Array((vertices.length + faces.length) * 3);
-    var newFaces = new Uint32Array(faces.length * 3 * 3);
+    var newGeometry = new THREE.BufferGeometry();
+    var newVertices = new Float32Array(vertices.length + faces.length);
+    var newFaces = new Uint32Array(faces.length * 3);
     // copy original geometry
     for (; newVertCnt < vertices.length; ++newVertCnt) {
         newVertices[newVertCnt] = vertices[newVertCnt];
@@ -78,14 +67,37 @@ function subdivide(geometry) {
 
     //add new vertices
     for (var i = 0; i < faces.length / 3; ++i) {
+        //calculate new vertex
+        newVertices[newVertCnt + 0] = (vertices[faces[i * 3] * 3 + 0] + vertices[faces[i * 3 + 1] * 3 + 0] + vertices[faces[i * 3 + 2] * 3 + 0]) / 3;
+        newVertices[newVertCnt + 1] = (vertices[faces[i * 3] * 3 + 1] + vertices[faces[i * 3 + 1] * 3 + 1] + vertices[faces[i * 3 + 2] * 3 + 1]) / 3;
+        newVertices[newVertCnt + 2] = (vertices[faces[i * 3] * 3 + 2] + vertices[faces[i * 3 + 1] * 3 + 2] + vertices[faces[i * 3 + 2] * 3 + 2]) / 3;
 
+        newFaces[newFacesCnt] = faces[i * 3];
+        newFaces[newFacesCnt + 1] = faces[i * 3 + 1];
+        newFaces[newFacesCnt + 2] = newVertCnt/3;
+        newFacesCnt+=3;
+
+        newFaces[newFacesCnt] = faces[i * 3 + 1];
+        newFaces[newFacesCnt + 1] = faces[i * 3 + 2];
+        newFaces[newFacesCnt + 2] = newVertCnt/3;
+        newFacesCnt+=3;
+
+        newFaces[i * 3] = faces[i * 3 + 2];
+        newFaces[i * 3 + 1] = faces[i * 3];
+        newFaces[i * 3 + 2] = newVertCnt/3;
+
+        newVertCnt+=3;
     }
 
 
-    geometry.addAttribute('position', new THREE.BufferAttribute(newVertices, 3));
-    geometry.setIndex(new THREE.BufferAttribute(newFaces, 1));
-    geometry.computeBoundingSphere();
-    geometry.computeVertexNormals();
+    newGeometry.addAttribute('position', new THREE.BufferAttribute(newVertices, 3));
+    newGeometry.setIndex(new THREE.BufferAttribute(newFaces, 1));
+    newGeometry.computeBoundingSphere();
+    newGeometry.computeVertexNormals();
+    crnParams.geometry.dispose();
+    crnParams.geometry = newGeometry;
+    crnParams.mesh.geometry = newGeometry;
+    crnParams.wireMesh.geometry = newGeometry;
 }
 
 function createBufferedIndexedGeomFromNormalGeometry(geometry) {
