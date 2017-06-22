@@ -65,12 +65,22 @@ function subdivide(geometry) {
         newFaces[newFacesCnt] = faces[newFacesCnt];
     }
 
+	//array of neighbours for every old vertex
+    var adjVertices = new Array();
+    for (var i = 0; i < vertices.length/3; ++i) {
+        adjVertices[i] = new Array();
+    }
+	
     //add new vertices
     for (var i = 0; i < faces.length / 3; ++i) {
         //calculate new vertex
         newVertices[newVertCnt + 0] = (vertices[faces[i * 3] * 3 + 0] + vertices[faces[i * 3 + 1] * 3 + 0] + vertices[faces[i * 3 + 2] * 3 + 0]) / 3;
         newVertices[newVertCnt + 1] = (vertices[faces[i * 3] * 3 + 1] + vertices[faces[i * 3 + 1] * 3 + 1] + vertices[faces[i * 3 + 2] * 3 + 1]) / 3;
         newVertices[newVertCnt + 2] = (vertices[faces[i * 3] * 3 + 2] + vertices[faces[i * 3 + 1] * 3 + 2] + vertices[faces[i * 3 + 2] * 3 + 2]) / 3;
+		
+		adjVertices[faces[i * 3 + 0]].push(newVertCnt/3);
+		adjVertices[faces[i * 3 + 1]].push(newVertCnt/3);
+		adjVertices[faces[i * 3 + 2]].push(newVertCnt/3);
 
         newFaces[newFacesCnt] = faces[i * 3];
         newFaces[newFacesCnt + 1] = faces[i * 3 + 1];
@@ -88,6 +98,29 @@ function subdivide(geometry) {
 
         newVertCnt+=3;
     }
+	
+	//“perturbe” old vertices
+    for (var i = 0; i < adjVertices.length; ++i) {
+		var crnSize = adjVertices[i].length;
+		var alpha = (4 - Math.cos((Math.PI * 2) / crnSize)) * (1 / 9);
+		
+		var newVertex = new THREE.Vector3();
+		for(var j = 0; j < crnSize; ++j) {
+			newVertex.x += newVertices[adjVertices[i][j] * 3 + 0];
+			newVertex.y += newVertices[adjVertices[i][j] * 3 + 1];
+			newVertex.z += newVertices[adjVertices[i][j] * 3 + 2];
+		}
+		newVertex.multiplyScalar(alpha/crnSize);
+		newVertex.x += vertices[i * 3 + 0] * (1 - alpha);
+		newVertex.y += vertices[i * 3 + 1] * (1 - alpha);
+		newVertex.z += vertices[i * 3 + 2] * (1 - alpha);
+		
+		newVertices[i * 3 + 0] = newVertex.x;
+		newVertices[i * 3 + 1] = newVertex.y;
+		newVertices[i * 3 + 2] = newVertex.z;
+    }
+	
+	//here have to flip some edges
 
 
     newGeometry.addAttribute('position', new THREE.BufferAttribute(newVertices, 3));
