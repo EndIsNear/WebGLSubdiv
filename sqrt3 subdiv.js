@@ -48,6 +48,12 @@ var controls;
 
 var width, height;
 
+function addFace(faces, faceCnt, a, b ,c) {
+		faces[faceCnt] = a;
+        faces[faceCnt + 1] = b;
+        faces[faceCnt + 2] = c;
+}
+
 //subdivide
 function subdivide(geometry) {
     var vertices = geometry.getAttribute('position').array;
@@ -61,9 +67,9 @@ function subdivide(geometry) {
     for (; newVertCnt < vertices.length; ++newVertCnt) {
         newVertices[newVertCnt] = vertices[newVertCnt];
     }
-    for (; newFacesCnt < faces.length; ++newFacesCnt) {
-        newFaces[newFacesCnt] = faces[newFacesCnt];
-    }
+    // for (; newFacesCnt < faces.length; ++newFacesCnt) {
+        // newFaces[newFacesCnt] = faces[newFacesCnt];
+    // }
 
 	//array of neighbours for every old vertex
     var adjVertices = new Array();
@@ -82,19 +88,13 @@ function subdivide(geometry) {
 		adjVertices[faces[i * 3 + 1]].push(newVertCnt/3);
 		adjVertices[faces[i * 3 + 2]].push(newVertCnt/3);
 
-        newFaces[newFacesCnt] = faces[i * 3];
-        newFaces[newFacesCnt + 1] = faces[i * 3 + 1];
-        newFaces[newFacesCnt + 2] = newVertCnt/3;
-        newFacesCnt+=3;
+		// addFace(newFaces, newFacesCnt, faces[i * 3], faces[i * 3 + 1], newVertCnt/3);
+        // newFacesCnt+=3;
+		
+		// addFace(newFaces, newFacesCnt, faces[i * 3 + 1], faces[i * 3 + 2], newVertCnt/3);
+        // newFacesCnt+=3;
 
-        newFaces[newFacesCnt] = faces[i * 3 + 1];
-        newFaces[newFacesCnt + 1] = faces[i * 3 + 2];
-        newFaces[newFacesCnt + 2] = newVertCnt/3;
-        newFacesCnt+=3;
-
-        newFaces[i * 3] = faces[i * 3 + 2];
-        newFaces[i * 3 + 1] = faces[i * 3];
-        newFaces[i * 3 + 2] = newVertCnt/3;
+		// addFace(newFaces, newFacesCnt, faces[i * 3 + 2], faces[i * 3], newVertCnt/3);
 
         newVertCnt+=3;
     }
@@ -121,12 +121,59 @@ function subdivide(geometry) {
     }
 	
 	//here have to flip some edges
+	//all old faces are useless now should connect every "old vertex" to its new Neighbors
+	for (var oldVertexIdx = 0; oldVertexIdx < adjVertices.length; ++oldVertexIdx) {
+		var idxOfFace = adjVertices[oldVertexIdx][0] - vertices.length / 3;
 
+		var searchingFor = -1;
+		var crnVert = adjVertices[oldVertexIdx][0];
+		var startVert = crnVert;
+		for(var i = 0; i < 3; ++i) {
+			if(faces[idxOfFace * 3 + i] != oldVertexIdx) {
+				searchingFor = faces[idxOfFace * 3 + i];
+				break;
+			} 
+		}
+		
+		for(var i = 1; i < adjVertices[oldVertexIdx].length ;) {
+			var found = false;
+			//we found all faces just connect the last one
+			if(adjVertices[oldVertexIdx].length == 1) {
+				addFace(newFaces, newFacesCnt, oldVertexIdx, crnVert, startVert);
+				newFacesCnt +=3;
+				break;
+			}
+			
+			idxOfFace = adjVertices[oldVertexIdx][i] - vertices.length / 3;
+			var j = 0;
+			for(; j < 3; ++j) {
+				if(faces[idxOfFace * 3 + j] == searchingFor) {
+					addFace(newFaces, newFacesCnt, oldVertexIdx, crnVert, adjVertices[oldVertexIdx][i]);
+					newFacesCnt +=3;
+					for(var k = 0; k < 3; ++k) {
+						var tmp = faces[idxOfFace * 3 + k]
+						if(tmp != oldVertexIdx && tmp != searchingFor) {
+							searchingFor = tmp;
+							crnVert = adjVertices[oldVertexIdx][i];
+							break;
+						}
+					}
+					
+					//remove the founded and start searching from the begining
+					adjVertices[oldVertexIdx].splice(i, 1);
+					i = 0;
+					found = true;
+					break;
+				}
+			}
+			if(!found) i++;
+		}
+	}
 
     newGeometry.addAttribute('position', new THREE.BufferAttribute(newVertices, 3));
     newGeometry.setIndex(new THREE.BufferAttribute(newFaces, 1));
     newGeometry.computeBoundingSphere();
-    newGeometry.computeVertexNormals();
+    //newGeometry.computeVertexNormals();
     crnParams.geometry.dispose();
     crnParams.geometry = newGeometry;
     crnParams.mesh.geometry = newGeometry;
@@ -233,9 +280,12 @@ function createMaterials() {
     };
     materials['phongFlat'] = new THREE.MeshPhongMaterial(commonPhongParams);
     materials['phongFlat'].shading = THREE.FlatShading;
+	materials['phongFlat'].side = THREE.DoubleSide;
     materials['phongSmooth'] = new THREE.MeshPhongMaterial(commonPhongParams);
     materials['phongSmooth'].shading = THREE.SmoothShading;
+    materials['phongSmooth'].side = THREE.DoubleSide;
     materials['lambert'] = new THREE.MeshLambertMaterial({color: crnParams.meshColor});
+    //materials['lambert'].side = THREE.DoubleSide;
     // create the wireframe material
     crnParams.wireMat = new THREE.MeshBasicMaterial({
         color: crnParams.wireColor,
